@@ -247,9 +247,13 @@
         }
         #displayInput {
             position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             opacity: 0;
-            pointer-events: none;
-            left: -9999px;
+            z-index: 10;
+            font-size: 16px;
         }
         .currency-label {
             font-size: 14px;
@@ -270,6 +274,9 @@
             width: 100%;
             height: 100%;
             padding: 5px;
+            pointer-events: none;
+            position: relative;
+            z-index: 5;
         }
         .message {
             position: fixed;
@@ -412,10 +419,10 @@
         </div>
 
         <div id="calculator">
-            <div id="display" onclick="focusInput()">
+            <div id="display">
+                <input type="number" id="displayInput" inputmode="decimal" pattern="[0-9]*" />
                 <div id="displayContent"></div>
             </div>
-            <input type="number" id="displayInput" inputmode="decimal" />
             <div class="button-row">
                 <button onclick="appendNumber('7')">7</button>
                 <button onclick="appendNumber('8')">8</button>
@@ -709,26 +716,10 @@
             }
         }
 
-        // スマホでの入力フォーカス
-        function focusInput() {
-            // 計算済みの場合はコピー
-            if (isCalculated && currentInput) {
-                copyToClipboard();
-                return;
-            }
-            
-            // それ以外はキーボード表示
-            const input = document.getElementById('displayInput');
-            input.focus();
-            
-            // モバイルでキーボードを強制表示
-            setTimeout(() => {
-                input.click();
-            }, 100);
-        }
-
         // 非表示の入力フィールドから数字を取得
-        document.getElementById('displayInput').addEventListener('input', function(e) {
+        const displayInput = document.getElementById('displayInput');
+        
+        displayInput.addEventListener('input', function(e) {
             const value = e.target.value;
             if (value) {
                 // 最後の文字だけ取得
@@ -740,6 +731,15 @@
                 }
                 // 入力をクリア
                 e.target.value = '';
+            }
+        });
+
+        // タップでフォーカス
+        displayInput.addEventListener('focus', function() {
+            // 計算済みの場合はコピーしてフォーカス解除
+            if (isCalculated && currentInput) {
+                copyToClipboard();
+                this.blur();
             }
         });
 
