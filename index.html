@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="為替電卓">
+    <meta name="theme-color" content="#fe9e3b">
+    <link rel="manifest" href="manifest.json">
+    <title>電卓 & 外貨計算</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 30px;
+            max-width: 800px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+        }
+        .currency-converter {
+            width: 280px;
+            padding: 20px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.2);
+        }
+        .currency-converter h3 {
+            margin-top: 0;
+            text-align: center;
+            color: #333;
+        }
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin: 0 10px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #fe9e3b;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .currency-form {
+            display: none;
+        }
+        .currency-form.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-group input[type="number"] {
+            cursor: text;
+            background-color: white;
+            transition: all 0.3s;
+        }
+        .form-group input[type="number"]:focus {
+            border-color: #fe9e3b;
+            outline: none;
+            box-shadow: 0 0 5px rgba(254, 158, 59, 0.3);
+        }
+        .date-inputs {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            position: relative;
+        }
+        .date-inputs input {
+            width: auto;
+            flex: 1;
+            text-align: center;
+            -moz-appearance: textfield;
+        }
+        .date-inputs input::-webkit-outer-spin-button,
+        .date-inputs input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .date-inputs span {
+            color: #666;
+        }
+        .date-picker-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin-left: 5px;
+        }
+        .date-picker-wrapper input[type="date"] {
+            cursor: pointer;
+            padding: 8px;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            color: transparent;
+            width: 40px;
+            height: 38px;
+        }
+        .date-picker-wrapper input[type="date"]::-webkit-datetime-edit {
+            display: none;
+        }
+        .date-picker-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            font-size: 20px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.7;
+        }
+        .date-picker-wrapper input[type="date"]:hover::-webkit-calendar-picker-indicator {
+            opacity: 1;
+        }
+        .rate-display {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        .rate-display .rate {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fe9e3b;
+            margin: 10px 0;
+        }
+        .rate-display .description {
+            font-size: 12px;
+            color: #666;
+        }
+        .rate-rows {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .rate-column {
+            flex: 1;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+        }
+        .rate-column .rate {
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        .api-info {
+            font-size: 11px;
+            color: #999;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+        .api-info .count {
+            color: #fe9e3b;
+            font-weight: bold;
+        }
+        #calculator {
+            width: 220px;
+            padding: 20px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.2);
+        }
+        #display {
+            width: 100%;
+            height: 40px;
+            font-size: 20px;
+            text-align: right;
+            margin-bottom: 10px;
+            border: 2px solid #fe9e3b;
+            border-radius: 5px;
+            padding: 5px;
+            background-color: #fffef8;
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: text;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 5px;
+            position: relative;
+        }
+        #display:hover {
+            box-shadow: 0 0 8px rgba(254, 158, 59, 0.4);
+        }
+        .currency-label {
+            font-size: 14px;
+            color: #666;
+        }
+        .original-value {
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            font-size: 11px;
+            color: #999;
+        }
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        .message.error {
+            background-color: #f44336;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        button {
+            width: 48%;
+            height: 40px;
+            font-size: 18px;
+            margin: 2%;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            background-color: #f0f0f0;
+        }
+        button:hover {
+            background-color: #e0e0e0;
+        }
+        button:active {
+            transform: scale(0.95);
+            background-color: #d0d0d0;
+        }
+        .operation {
+            background-color: #fe9e3b;
+            color: white;
+        }
+        .operation:hover {
+            background-color: #f77f1e;
+        }
+        .operation:active {
+            background-color: #e66f00;
+        }
+        .key-press {
+            transform: scale(0.95);
+            background-color: #d0d0d0;
+        }
+        .operation.key-press {
+            background-color: #e66f00;
+        }
+        .button-row {
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="currency-converter">
+            <h3>外貨計算</h3>
+            <div class="switch-container">
+                <span>OFF</span>
+                <label class="switch">
+                    <input type="checkbox" id="currencySwitch">
+                    <span class="slider"></span>
+                </label>
+                <span>ON</span>
+            </div>
+            <div class="currency-form" id="currencyForm">
+                <div class="form-group">
+                    <label>換算元通貨 (A)</label>
+                    <select id="fromCurrency">
+                        <option value="JPY" selected>JPY - 日本円</option>
+                        <option value="EUR">EUR - ユーロ</option>
+                        <option value="CAD">CAD - カナダドル</option>
+                        <option disabled>──────────</option>
+                        <option value="USD">USD - 米ドル</option>
+                        <option value="GBP">GBP - 英ポンド</option>
+                        <option value="CNY">CNY - 中国元</option>
+                        <option value="KRW">KRW - 韓国ウォン</option>
+                        <option value="AUD">AUD - 豪ドル</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>換算先通貨 (B)</label>
+                    <select id="toCurrency">
+                        <option value="JPY">JPY - 日本円</option>
+                        <option value="EUR" selected>EUR - ユーロ</option>
+                        <option value="CAD">CAD - カナダドル</option>
+                        <option disabled>──────────</option>
+                        <option value="USD">USD - 米ドル</option>
+                        <option value="GBP">GBP - 英ポンド</option>
+                        <option value="CNY">CNY - 中国元</option>
+                        <option value="KRW">KRW - 韓国ウォン</option>
+                        <option value="AUD">AUD - 豪ドル</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>日付</label>
+                    <div class="date-inputs">
+                        <input type="number" id="year" placeholder="年" min="2000" max="2100">
+                        <span>/</span>
+                        <input type="number" id="month" placeholder="月" min="1" max="12">
+                        <span>/</span>
+                        <input type="number" id="day" placeholder="日" min="1" max="31">
+                        <div class="date-picker-wrapper">
+                            <input type="date" id="datePicker">
+                        </div>
+                    </div>
+                </div>
+                <div class="rate-display">
+                    <div class="rate-rows">
+                        <div class="rate-column">
+                            <div class="description">1 <span id="fromCurrencyLabel">JPY</span> =</div>
+                            <div class="rate" id="rateValue">---</div>
+                        </div>
+                        <div class="rate-column">
+                            <div class="description">1 <span id="toCurrencyLabel">EUR</span> =</div>
+                            <div class="rate" id="reverseRateValue">---</div>
+                        </div>
+                    </div>
+                    <div class="description" id="lastUpdate">---</div>
+                    <div class="api-info">
+                        <div>セッション中の取得回数</div>
+                        <div class="count" id="apiCount">0 回</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="calculator">
+            <div id="display" onclick="copyToClipboard()"></div>
+            <div class="button-row">
+                <button onclick="appendNumber('7')">7</button>
+                <button onclick="appendNumber('8')">8</button>
+                <button onclick="appendNumber('9')">9</button>
+                <button class="operation" onclick="setOperation('/')">÷</button>
+            </div>
+            <div class="button-row">
+                <button onclick="appendNumber('4')">4</button>
+                <button onclick="appendNumber('5')">5</button>
+                <button onclick="appendNumber('6')">6</button>
+                <button class="operation" onclick="setOperation('*')">×</button>
+            </div>
+            <div class="button-row">
+                <button onclick="appendNumber('1')">1</button>
+                <button onclick="appendNumber('2')">2</button>
+                <button onclick="appendNumber('3')">3</button>
+                <button class="operation" onclick="setOperation('-')">ー</button>
+            </div>
+            <div class="button-row">
+                <button id="clearButton" onclick="clearDisplay()">AC</button>
+                <button onclick="appendNumber('0')">0</button>
+                <button class="operation" onclick="calculateResult()">=</button>
+                <button class="operation" onclick="setOperation('+')">＋</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentInput = '';
+        let operation = '';
+        let previousInput = '';
+        let exchangeRate = null;
+        let currencyMode = true;
+        let isCalculated = false;
+        let displayCurrency = 'A';
+        let apiCallCount = 0;
+        let originalAmount = ''; // 元のA通貨の金額を保存
+        const ALPHA_VANTAGE_API_KEY = '88TOS4T12QV4UHF2';
+        let rateCache = {}; // レートをキャッシュ
+
+        // 今日の日付を設定
+        const today = new Date();
+        document.getElementById('year').value = today.getFullYear();
+        document.getElementById('month').value = today.getMonth() + 1;
+        document.getElementById('day').value = today.getDate();
+        document.getElementById('datePicker').value = today.toISOString().split('T')[0];
+
+        // デフォルトで外貨モードON
+        document.getElementById('currencySwitch').checked = true;
+        document.getElementById('currencyForm').classList.add('active');
+        
+        // 初期レート取得
+        updateExchangeRate();
+
+        // 日付変更時に再計算
+        function recalculateIfNeeded() {
+            // 外貨モードかつ計算済み状態で、元の金額が保存されている場合
+            if (currencyMode && isCalculated && originalAmount && exchangeRate !== null) {
+                // 元の金額から再計算
+                setTimeout(() => {
+                    if (exchangeRate !== null) {
+                        const amount = parseFloat(originalAmount.replace(/,/g, ''));
+                        if (!isNaN(amount)) {
+                            const result = amount * exchangeRate;
+                            currentInput = result.toFixed(2);
+                            displayCurrency = 'B';
+                            updateDisplay();
+                        }
+                    }
+                }, 500); // APIレート取得後に実行
+            }
+        }
+
+        // カレンダーアイコンから日付選択
+        document.getElementById('datePicker').addEventListener('change', function() {
+            const date = new Date(this.value);
+            document.getElementById('year').value = date.getFullYear();
+            document.getElementById('month').value = date.getMonth() + 1;
+            document.getElementById('day').value = date.getDate();
+            // カレンダー選択時は即座に更新
+            updateExchangeRate();
+            recalculateIfNeeded();
+        });
+
+        // 日付ピッカーの値も初期化時に同期
+        function syncDatePicker() {
+            const year = document.getElementById('year').value;
+            const month = String(document.getElementById('month').value).padStart(2, '0');
+            const day = String(document.getElementById('day').value).padStart(2, '0');
+            if (year && month && day) {
+                document.getElementById('datePicker').value = `${year}-${month}-${day}`;
+            }
+        }
+
+        // 日付入力時にカレンダーピッカーも同期
+        ['year', 'month', 'day'].forEach(id => {
+            document.getElementById(id).addEventListener('blur', syncDatePicker);
+        });
+
+        // 通貨スイッチの切り替え
+        document.getElementById('currencySwitch').addEventListener('change', function() {
+            currencyMode = this.checked;
+            const form = document.getElementById('currencyForm');
+            if (currencyMode) {
+                form.classList.add('active');
+                updateExchangeRate();
+            } else {
+                form.classList.remove('active');
+            }
+            updateDisplay();
+        });
+
+        // 通貨変更時にレート更新
+        document.getElementById('fromCurrency').addEventListener('change', () => {
+            updateExchangeRate();
+            recalculateIfNeeded();
+            updateDisplay();
+        });
+        document.getElementById('toCurrency').addEventListener('change', () => {
+            updateExchangeRate();
+            recalculateIfNeeded();
+            updateDisplay();
+        });
+        
+        // 日付入力はblur時(フォーカスが離れた時)に更新
+        document.getElementById('year').addEventListener('blur', () => {
+            updateExchangeRate();
+            recalculateIfNeeded();
+        });
+        document.getElementById('month').addEventListener('blur', () => {
+            updateExchangeRate();
+            recalculateIfNeeded();
+        });
+        document.getElementById('day').addEventListener('blur', () => {
+            updateExchangeRate();
+            recalculateIfNeeded();
+        });
+
+        // 日付入力フィールドでキーイベントを止める
+        ['year', 'month', 'day'].forEach(id => {
+            const input = document.getElementById(id);
+            input.addEventListener('keydown', function(e) {
+                // Enterキーでフォーカスを外す
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.blur();
+                    return;
+                }
+                
+                e.stopPropagation();
+                // 数字、Tab、Backspace、Delete、矢印キーのみ許可
+                const allowedKeys = ['Tab', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+                if (!allowedKeys.includes(e.key) && (e.key < '0' || e.key > '9')) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // 為替レート取得 (複数APIフォールバック + キャッシュ)
+        async function updateExchangeRate() {
+            const from = document.getElementById('fromCurrency').value;
+            const to = document.getElementById('toCurrency').value;
+            const year = document.getElementById('year').value;
+            const month = String(document.getElementById('month').value).padStart(2, '0');
+            const day = String(document.getElementById('day').value).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
+
+            document.getElementById('fromCurrencyLabel').textContent = from;
+            document.getElementById('toCurrencyLabel').textContent = to;
+
+            // キャッシュチェック
+            const cacheKey = `${from}_${to}_${dateString}`;
+            if (rateCache[cacheKey]) {
+                exchangeRate = rateCache[cacheKey].rate;
+                const reverseRate = 1 / exchangeRate;
+                document.getElementById('rateValue').textContent = exchangeRate.toFixed(4) + ' ' + to;
+                document.getElementById('reverseRateValue').textContent = reverseRate.toFixed(4) + ' ' + from;
+                document.getElementById('lastUpdate').textContent = '最終更新: ' + rateCache[cacheKey].timestamp;
+                return;
+            }
+
+            // ローディング表示
+            document.getElementById('rateValue').textContent = '取得中...';
+            document.getElementById('reverseRateValue').textContent = '取得中...';
+            document.getElementById('lastUpdate').textContent = '---';
+
+            // API呼び出し回数をカウント
+            apiCallCount++;
+            updateApiCount();
+
+            // 現在時刻を取得
+            const now = new Date();
+            const timestamp = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+            // 1. Frankfurter API (無料、過去データ対応)
+            try {
+                const url1 = `https://api.frankfurter.app/${dateString}?from=${from}&to=${to}`;
+                const response1 = await fetch(url1, { timeout: 5000 });
+                const data1 = await response1.json();
+                
+                if (data1.rates && data1.rates[to]) {
+                    exchangeRate = data1.rates[to];
+                    const reverseRate = 1 / exchangeRate;
+                    rateCache[cacheKey] = { rate: exchangeRate, timestamp: timestamp };
+                    document.getElementById('rateValue').textContent = exchangeRate.toFixed(4) + ' ' + to;
+                    document.getElementById('reverseRateValue').textContent = reverseRate.toFixed(4) + ' ' + from;
+                    document.getElementById('lastUpdate').textContent = '最終更新: ' + timestamp;
+                    return;
+                }
+            } catch (error) {
+                console.log('Frankfurter API failed, trying next...');
+            }
+
+            // 2. ExchangeRate-API (無料、リアルタイムのみ)
+            try {
+                const url2 = `https://api.exchangerate-api.com/v4/latest/${from}`;
+                const response2 = await fetch(url2, { timeout: 5000 });
+                const data2 = await response2.json();
+                
+                if (data2.rates && data2.rates[to]) {
+                    exchangeRate = data2.rates[to];
+                    const reverseRate = 1 / exchangeRate;
+                    rateCache[cacheKey] = { rate: exchangeRate, timestamp: timestamp };
+                    document.getElementById('rateValue').textContent = exchangeRate.toFixed(4) + ' ' + to + ' (最新)';
+                    document.getElementById('reverseRateValue').textContent = reverseRate.toFixed(4) + ' ' + from + ' (最新)';
+                    document.getElementById('lastUpdate').textContent = '最終更新: ' + timestamp;
+                    return;
+                }
+            } catch (error) {
+                console.log('ExchangeRate-API failed, trying next...');
+            }
+
+            // 3. Alpha Vantage API (最終手段、リアルタイムのみ)
+            try {
+                const url3 = `https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=${from}&to_currency=${to}&apikey=${ALPHA_VANTAGE_API_KEY}`;
+                const response3 = await fetch(url3, { timeout: 5000 });
+                const data3 = await response3.json();
+                
+                if (data3['Realtime Currency Exchange Rate']) {
+                    exchangeRate = parseFloat(data3['Realtime Currency Exchange Rate']['5. Exchange Rate']);
+                    const reverseRate = 1 / exchangeRate;
+                    rateCache[cacheKey] = { rate: exchangeRate, timestamp: timestamp };
+                    document.getElementById('rateValue').textContent = exchangeRate.toFixed(4) + ' ' + to + ' (最新)';
+                    document.getElementById('reverseRateValue').textContent = reverseRate.toFixed(4) + ' ' + from + ' (最新)';
+                    document.getElementById('lastUpdate').textContent = '最終更新: ' + timestamp;
+                    return;
+                }
+            } catch (error) {
+                console.log('Alpha Vantage API failed');
+            }
+
+            // すべてのAPIが失敗
+            document.getElementById('rateValue').textContent = '全API取得失敗';
+            document.getElementById('reverseRateValue').textContent = '---';
+            document.getElementById('lastUpdate').textContent = '---';
+            exchangeRate = null;
+        }
+
+        // API呼び出し回数を更新
+        function updateApiCount() {
+            document.getElementById('apiCount').textContent = `${apiCallCount} 回`;
+        }
+
+        // メッセージ表示
+        function showMessage(text, isError = false) {
+            const msg = document.createElement('div');
+            msg.className = 'message' + (isError ? ' error' : '');
+            msg.textContent = text;
+            document.body.appendChild(msg);
+            setTimeout(() => {
+                msg.remove();
+            }, 2000);
+        }
+
+        // クリップボードにコピー
+        function copyToClipboard() {
+            if (isCalculated && currentInput) {
+                const textToCopy = currentInput.replace(/,/g, '');
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showMessage('コピーしました');
+                });
+            }
+        }
+
+        // 数字をフォーマット
+        function formatNumber(num) {
+            const parts = num.split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return parts.join('.');
+        }
+
+        // ボタンを視覚的に押す効果
+        function animateButton(buttonText) {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => {
+                if (btn.textContent === buttonText) {
+                    btn.classList.add('key-press');
+                    setTimeout(() => {
+                        btn.classList.remove('key-press');
+                    }, 100);
+                }
+            });
+        }
+
+        // キーボード入力対応
+        document.addEventListener('keydown', function(event) {
+            // Command+C または Ctrl+C は通常のコピーとして機能
+            if ((event.metaKey || event.ctrlKey) && event.key === 'c') {
+                return;
+            }
+
+            const key = event.key;
+            
+            if (key >= '0' && key <= '9') {
+                event.preventDefault();
+                animateButton(key);
+                appendNumber(key);
+            }
+            else if (key === '.') {
+                event.preventDefault();
+                appendNumber('.');
+            }
+            else if (key === '+') {
+                event.preventDefault();
+                animateButton('＋');
+                setOperation('+');
+            }
+            else if (key === '-') {
+                event.preventDefault();
+                animateButton('ー');
+                setOperation('-');
+            }
+            else if (key === '*') {
+                event.preventDefault();
+                animateButton('×');
+                setOperation('*');
+            }
+            else if (key === '/') {
+                event.preventDefault();
+                animateButton('÷');
+                setOperation('/');
+            }
+            else if (key === '＋') {
+                event.preventDefault();
+                animateButton('＋');
+                setOperation('+');
+            }
+            else if (key === 'ー' || key === '−') {
+                event.preventDefault();
+                animateButton('ー');
+                setOperation('-');
+            }
+            else if (key === '×' || key === '✖') {
+                event.preventDefault();
+                animateButton('×');
+                setOperation('*');
+            }
+            else if (key === '÷' || key === '➗') {
+                event.preventDefault();
+                animateButton('÷');
+                setOperation('/');
+            }
+            else if (key === 'Enter' || key === '=') {
+                event.preventDefault();
+                animateButton('=');
+                calculateResult();
+            }
+            else if (key === 'Delete' || key === 'Backspace') {
+                event.preventDefault();
+                const clearBtn = document.getElementById('clearButton');
+                animateButton(clearBtn.textContent);
+                deleteLastChar();
+                return;
+            }
+            else if (key === 'Escape' || key.toLowerCase() === 'c') {
+                event.preventDefault();
+                const clearBtn = document.getElementById('clearButton');
+                animateButton(clearBtn.textContent);
+                clearDisplay();
+            }
+        });
+
+        function appendNumber(number) {
+            if (number === '.' && currentInput.includes('.')) return;
+            
+            // 計算済み(B表示)の状態で新しい数字を入力した場合、全クリアして新規入力
+            if (isCalculated && displayCurrency === 'B') {
+                clearDisplay();
+            }
+            
+            // 計算済みフラグをリセット
+            if (isCalculated) {
+                isCalculated = false;
+                displayCurrency = 'A';
+            }
+            
+            currentInput += number;
+            updateDisplay();
+            updateClearButton();
+        }
+
+        function deleteLastChar() {
+            if (currentInput.length > 0) {
+                currentInput = currentInput.slice(0, -1);
+                displayCurrency = 'A';
+                isCalculated = false;
+                updateDisplay();
+                updateClearButton();
+            }
+        }
+
+        function setOperation(op) {
+            if (currentInput === '') return;
+            if (previousInput !== '') {
+                calculateResult();
+            }
+            operation = op;
+            previousInput = currentInput;
+            currentInput = '';
+            isCalculated = false;
+            displayCurrency = 'A';
+            updateClearButton();
+        }
+
+        function calculateResult() {
+            // 既に計算済みの場合
+            if (isCalculated) {
+                showMessage('計算済みです', true);
+                return;
+            }
+
+            // 外貨計算モードの場合
+            if (currencyMode && exchangeRate !== null && operation === '') {
+                const amount = parseFloat(currentInput.replace(/,/g, ''));
+                if (!isNaN(amount)) {
+                    originalAmount = currentInput; // 元の金額を保存
+                    const result = amount * exchangeRate;
+                    currentInput = result.toFixed(2);
+                    displayCurrency = 'B';
+                    isCalculated = true;
+                    updateDisplay();
+                    updateClearButton();
+                }
+                return;
+            }
+
+            // 通常の電卓計算
+            let result;
+            const prev = parseFloat(previousInput.replace(/,/g, ''));
+            const curr = parseFloat(currentInput.replace(/,/g, ''));
+
+            if (isNaN(prev) || isNaN(curr)) return;
+
+            switch (operation) {
+                case '+':
+                    result = prev + curr;
+                    break;
+                case '-':
+                    result = prev - curr;
+                    break;
+                case '*':
+                    result = prev * curr;
+                    break;
+                case '/':
+                    result = prev / curr;
+                    break;
+                default:
+                    return;
+            }
+            currentInput = result.toString();
+            operation = '';
+            previousInput = '';
+            isCalculated = true;
+            updateDisplay();
+            updateClearButton();
+        }
+
+        function clearDisplay() {
+            currentInput = '';
+            previousInput = '';
+            operation = '';
+            isCalculated = false;
+            displayCurrency = 'A';
+            originalAmount = '';
+            updateDisplay();
+            updateClearButton();
+        }
+
+        function updateClearButton() {
+            const clearBtn = document.getElementById('clearButton');
+            if (currentInput === '' && previousInput === '' && operation === '') {
+                clearBtn.textContent = 'AC';
+            } else {
+                clearBtn.textContent = 'C';
+            }
+        }
+
+        function updateDisplay() {
+            const display = document.getElementById('display');
+            let displayValue = currentInput;
+            
+            if (displayValue && !isNaN(displayValue.replace(/,/g, ''))) {
+                displayValue = formatNumber(displayValue);
+            }
+            
+            if (currencyMode && displayValue) {
+                const from = document.getElementById('fromCurrency').value;
+                const to = document.getElementById('toCurrency').value;
+                const currency = displayCurrency === 'A' ? from : to;
+                
+                // B通貨表示の場合、左上に元の値を表示
+                if (isCalculated && displayCurrency === 'B' && originalAmount) {
+                    const originalFormatted = formatNumber(originalAmount);
+                    display.innerHTML = `<span class="original-value">${originalFormatted} ${from}</span><span>${displayValue}</span><span class="currency-label">${currency}</span>`;
+                } else {
+                    display.innerHTML = `<span>${displayValue}</span><span class="currency-label">${currency}</span>`;
+                }
+            } else {
+                display.innerHTML = displayValue;
+            }
+        }
+    </script>
+</body>
+</html>
