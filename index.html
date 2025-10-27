@@ -421,7 +421,7 @@
 
         <div id="calculator">
             <div id="calculatorDisplay">
-                <input type="text" id="display" inputmode="decimal" />
+                <input type="text" id="display" inputmode="decimal" readonly />
             </div>
             <div class="button-row">
                 <button onclick="appendNumber('7')">7</button>
@@ -856,6 +856,7 @@
             }
             
             currentInput += number;
+            isButtonInput = true;
             updateDisplay();
             updateClearButton();
         }
