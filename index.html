@@ -235,17 +235,21 @@
             border-radius: 5px;
             padding: 5px;
             background-color: #fffef8;
-            cursor: pointer;
+            cursor: text;
             transition: all 0.3s;
             user-select: text;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 5px;
             position: relative;
+            -webkit-user-select: text;
+            -webkit-tap-highlight-color: transparent;
         }
-        #display:hover {
+        #display:hover, #display:focus {
             box-shadow: 0 0 8px rgba(254, 158, 59, 0.4);
+        }
+        #displayInput {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            left: -9999px;
         }
         .currency-label {
             font-size: 14px;
@@ -257,6 +261,15 @@
             top: 5px;
             font-size: 11px;
             color: #999;
+        }
+        #displayContent {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 5px;
+            width: 100%;
+            height: 100%;
+            padding: 5px;
         }
         .message {
             position: fixed;
@@ -284,10 +297,10 @@
             }
         }
         button {
-            width: 48%;
-            height: 40px;
+            width: 23%;
+            height: 50px;
             font-size: 18px;
-            margin: 2%;
+            margin: 1%;
             border: none;
             border-radius: 5px;
             box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
@@ -399,7 +412,10 @@
         </div>
 
         <div id="calculator">
-            <div id="display" onclick="copyToClipboard()"></div>
+            <div id="display" onclick="focusInput()">
+                <div id="displayContent"></div>
+            </div>
+            <input type="number" id="displayInput" inputmode="decimal" />
             <div class="button-row">
                 <button onclick="appendNumber('7')">7</button>
                 <button onclick="appendNumber('8')">8</button>
@@ -693,6 +709,40 @@
             }
         }
 
+        // スマホでの入力フォーカス
+        function focusInput() {
+            // 計算済みの場合はコピー
+            if (isCalculated && currentInput) {
+                copyToClipboard();
+                return;
+            }
+            
+            // それ以外はキーボード表示
+            const input = document.getElementById('displayInput');
+            input.focus();
+            
+            // モバイルでキーボードを強制表示
+            setTimeout(() => {
+                input.click();
+            }, 100);
+        }
+
+        // 非表示の入力フィールドから数字を取得
+        document.getElementById('displayInput').addEventListener('input', function(e) {
+            const value = e.target.value;
+            if (value) {
+                // 最後の文字だけ取得
+                const lastChar = value.slice(-1);
+                if (lastChar >= '0' && lastChar <= '9') {
+                    appendNumber(lastChar);
+                } else if (lastChar === '.') {
+                    appendNumber('.');
+                }
+                // 入力をクリア
+                e.target.value = '';
+            }
+        });
+
         // 数字をフォーマット
         function formatNumber(num) {
             const parts = num.split('.');
@@ -907,7 +957,7 @@
         }
 
         function updateDisplay() {
-            const display = document.getElementById('display');
+            const displayContent = document.getElementById('displayContent');
             let displayValue = currentInput;
             
             if (displayValue && !isNaN(displayValue.replace(/,/g, ''))) {
@@ -922,12 +972,12 @@
                 // B通貨表示の場合、左上に元の値を表示
                 if (isCalculated && displayCurrency === 'B' && originalAmount) {
                     const originalFormatted = formatNumber(originalAmount);
-                    display.innerHTML = `<span class="original-value">${originalFormatted} ${from}</span><span>${displayValue}</span><span class="currency-label">${currency}</span>`;
+                    displayContent.innerHTML = `<span class="original-value">${originalFormatted} ${from}</span><span>${displayValue}</span><span class="currency-label">${currency}</span>`;
                 } else {
-                    display.innerHTML = `<span>${displayValue}</span><span class="currency-label">${currency}</span>`;
+                    displayContent.innerHTML = `<span>${displayValue}</span><span class="currency-label">${currency}</span>`;
                 }
             } else {
-                display.innerHTML = displayValue;
+                displayContent.innerHTML = displayValue;
             }
         }
     </script>
