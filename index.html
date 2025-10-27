@@ -230,34 +230,26 @@
         }
         #display {
             width: 100%;
-            height: 40px;
+            height: 50px;
             font-size: 20px;
             text-align: right;
             margin-bottom: 10px;
             border: 2px solid #fe9e3b;
             border-radius: 5px;
-            padding: 5px;
-            background-color: #fffef8;
-            cursor: text;
+            padding: 5px 10px;
+            background-color: white;
             transition: all 0.3s;
-            user-select: text;
-            position: relative;
-            -webkit-user-select: text;
-            -webkit-tap-highlight-color: transparent;
             box-sizing: border-box;
         }
-        #display:hover, #display:focus {
+        #display:focus {
+            outline: none;
+            border-color: #fe9e3b;
             box-shadow: 0 0 8px rgba(254, 158, 59, 0.4);
         }
-        #displayInput {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            z-index: 10;
-            font-size: 16px;
+        #display::-webkit-inner-spin-button,
+        #display::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
         .currency-label {
             font-size: 14px;
@@ -428,9 +420,8 @@
         </div>
 
         <div id="calculator">
-            <div id="display">
-                <input type="number" id="displayInput" inputmode="decimal" pattern="[0-9]*" />
-                <div id="displayContent"></div>
+            <div id="calculatorDisplay">
+                <input type="text" id="display" inputmode="decimal" readonly />
             </div>
             <div class="button-row">
                 <button onclick="appendNumber('7')">7</button>
@@ -966,7 +957,8 @@
         }
 
         function updateDisplay() {
-            const displayContent = document.getElementById('displayContent');
+            const displayElement = document.getElementById('display');
+            const displayContainer = document.getElementById('calculatorDisplay');
             let displayValue = currentInput;
             
             if (displayValue && !isNaN(displayValue.replace(/,/g, ''))) {
@@ -981,12 +973,31 @@
                 // B通貨表示の場合、左上に元の値を表示
                 if (isCalculated && displayCurrency === 'B' && originalAmount) {
                     const originalFormatted = formatNumber(originalAmount);
-                    displayContent.innerHTML = `<span class="original-value">${originalFormatted} ${from}</span><span>${displayValue}</span><span class="currency-label">${currency}</span>`;
+                    displayElement.value = displayValue + ' ' + currency;
+                    
+                    // 元の値を別途表示
+                    let originalLabel = displayContainer.querySelector('.original-value');
+                    if (!originalLabel) {
+                        originalLabel = document.createElement('span');
+                        originalLabel.className = 'original-value';
+                        displayContainer.appendChild(originalLabel);
+                    }
+                    originalLabel.textContent = originalFormatted + ' ' + from;
                 } else {
-                    displayContent.innerHTML = `<span>${displayValue}</span><span class="currency-label">${currency}</span>`;
+                    displayElement.value = displayValue + ' ' + currency;
+                    // 元の値ラベルを削除
+                    const originalLabel = displayContainer.querySelector('.original-value');
+                    if (originalLabel) {
+                        originalLabel.remove();
+                    }
                 }
             } else {
-                displayContent.innerHTML = displayValue;
+                displayElement.value = displayValue;
+                // 元の値ラベルを削除
+                const originalLabel = displayContainer.querySelector('.original-value');
+                if (originalLabel) {
+                    originalLabel.remove();
+                }
             }
         }
     </script>
