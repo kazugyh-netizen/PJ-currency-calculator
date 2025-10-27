@@ -26,17 +26,20 @@
         }
         .currency-converter, #calculator {
             width: 100%;
-            max-width: 320px;
+            max-width: 100%;
             padding: 20px;
             border: 2px solid #ccc;
             border-radius: 10px;
             background-color: white;
             box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+            flex: 1;
+            min-width: 280px;
         }
         @media (min-width: 768px) {
             .currency-converter, #calculator {
-                width: calc(50% - 15px);
-                max-width: 360px;
+                flex: 1;
+                max-width: 400px;
             }
         }
         .currency-converter h3 {
@@ -241,6 +244,7 @@
             position: relative;
             -webkit-user-select: text;
             -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
         }
         #display:hover, #display:focus {
             box-shadow: 0 0 8px rgba(254, 158, 59, 0.4);
@@ -304,10 +308,8 @@
             }
         }
         button {
-            width: 23%;
             height: 50px;
             font-size: 18px;
-            margin: 1%;
             border: none;
             border-radius: 5px;
             box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
@@ -341,6 +343,13 @@
         .button-row {
             display: flex;
             justify-content: space-between;
+            gap: 2%;
+            margin-bottom: 2%;
+        }
+        .button-row button {
+            flex: 1;
+            width: auto;
+            margin: 0;
         }
     </style>
 </head>
